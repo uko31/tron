@@ -4,7 +4,7 @@
 #
 #   Things to do and ideas:
 #    - déterminer le vainqueur!
-#    - permettre des lignes plus grosses
+#    - permettre des lignes plus grosses (done !)
 #
 #    - mettre en place un turbo avec recharge (speedx2 pendant X ticks)
 #    - faire apparaitre les garages de départ
@@ -74,24 +74,33 @@ class TronFrame:
         
         if event.char == '1':
             self.players.append("Player-%c" % event.char)
-            self.player1 = TronPlayer(self, "Player-1", self.start_positions['West'], self.speed, 0, '<Left>', '<Right>', 'blue')
+            self.player1 = TronPlayer(self, "Player-1", self.start_positions['West'], self.speed, 0, '<Left>', '<Right>', '<Up>', 'blue')
             self.player1.start()
         if event.char == '2':
             self.players.append("Player-%c" % event.char)
-            self.player2 = TronPlayer(self, "Player-2", self.start_positions['East'], -self.speed, 0, 'a', 'z', 'red')
+            self.player2 = TronPlayer(self, "Player-2", self.start_positions['East'], -self.speed, 0, 'q', 'd', 'z', 'red')
             self.player2.start()
         if event.char == '3':
             self.players.append("Player-%c" % event.char)
-            self.player2 = TronPlayer(self, "Player-3", self.start_positions['North'], 0, self.speed, 'y', 'u', 'green')
-            self.player2.start()
+            self.player3 = TronPlayer(self, "Player-3", self.start_positions['North'], 0, self.speed, 'g', 'j', 'y', 'green')
+            self.player3.start()
         if event.char == '4':
             self.players.append("Player-%c" % event.char)
-            self.player2 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, ':', '!', 'cyan')
-            self.player2.start()
+            self.player4 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, 'l', 'ù', 'p', 'orange')
+            self.player4.start()
 
 class TronPlayer(threading.Thread):
     
-    def __init__(self, root, name, coord, x_speed, y_speed, left_key, right_key, color):
+    def __init__( self, 
+                  root, 
+                  name, 
+                  coord, 
+                  x_speed, 
+                  y_speed, 
+                  left_key, 
+                  right_key, 
+                  boost_key,
+                  color):
         threading.Thread.__init__(self)
         
         self.canvas = root.canvas
@@ -103,16 +112,23 @@ class TronPlayer(threading.Thread):
         self.delay = _DELAY_
         self.terminate = False
         self.color = color
-        
+        self.tick = -1
         self.width = _THICK_
+        self.boost_flag = False        
         
         self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
         self.x, self.y = self.x + self.x_speed, self.y + self.y_speed
-        self.canvas.bind(left_key, self.turnLeft)
+        self.canvas.bind(left_key,  self.turnLeft)
         self.canvas.bind(right_key, self.turnRight)
+        self.canvas.bind(boost_key, self.boost)
         
     def run(self):
         while not self.terminate:
+            if self.tick == 0:
+                self.endBoost()
+            if self.tick >= 0:
+                self.tick -= 1
+            
             if self.collision():
                 self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
                 self.terminate = True
@@ -198,6 +214,25 @@ class TronPlayer(threading.Thread):
             self.x_speed -= self.y_speed
             self.y_speed = 0
 
+    def boost(self, event=None):
+        if not self.boost_flag:
+            print("Boost !!!")
+            self.tick = 25
+            self.boost_flag = True
+            if self.x_speed != 0: 
+                self.x_speed *= 2
+            if self.y_speed != 0: 
+                self.y_speed *= 2
+
+    def endBoost(self):
+        print("Player: %s end boost :/" % self.name)
+        self.boost_flag = False
+        if self.x_speed != 0:
+            self.x_speed /= 2
+        if self.y_speed != 0:
+            self.y_speed /= 2
+
+       
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
