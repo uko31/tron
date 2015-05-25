@@ -46,16 +46,18 @@ class TronFrame:
         self.speed = speed
         self.players = list()
         
-        self.InitStartPositions()
         self.InitMenu()
         self.InitUI()
         self.DrawUI()
+        self.InitStartPositions()
     
     def InitMenu(self):
         self.menuBar  = Menu(self.root)
         self.gameMenu = Menu(self.menuBar, tearoff=0)
         self.gameMenu.add_command(label="New Game", command=self.newGame)
         self.gameMenu.add_command(label="Settings...", command=self.settings)
+        self.gameMenu.add_separator()
+        self.gameMenu.add_command(label="Quit", command=quit)
         self.menuBar.add_cascade(label="Game", menu=self.gameMenu)
         
         self.root.config(menu = self.menuBar)
@@ -82,13 +84,18 @@ class TronFrame:
 
     def InitStartPositions(self):
         self.start_positions = dict()
-        self.start_positions['West']  = {'x' : 10,           'y' : _HEIGHT_ / 2  }
-        self.start_positions['East']  = {'x' : _WIDTH_ - 10, 'y' : _HEIGHT_ / 2  }
-        self.start_positions['North'] = {'x' : _WIDTH_ / 2,  'y' : 10            }
-        self.start_positions['South'] = {'x' : _WIDTH_ / 2,  'y' : _HEIGHT_ - 10 }
+        self.start_positions['West']  = {'x' : 20,           'y' : _HEIGHT_ / 2  }
+        self.start_positions['East']  = {'x' : _WIDTH_ - 20, 'y' : _HEIGHT_ / 2  }
+        self.start_positions['North'] = {'x' : _WIDTH_ / 2,  'y' : 20            }
+        self.start_positions['South'] = {'x' : _WIDTH_ / 2,  'y' : _HEIGHT_ - 20 }
+
+        self.drawGarage(self.start_positions['West'], 'East')
+        self.drawGarage(self.start_positions['East'], 'West')
+        self.drawGarage(self.start_positions['North'], 'South')
+        self.drawGarage(self.start_positions['South'], 'North')
+
 
     def Start(self, event=None):
-        print(event.keysym)
         if self.players.count("Player-%s" % event.char):
             return(False)
         
@@ -108,6 +115,17 @@ class TronFrame:
             self.players.append("Player-4")
             self.player4 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, '<KP_1>', '<KP_3>', '<KP_5>', 'orange')
             self.player4.start()
+    
+    def drawGarage(self, start_position, direction):
+        if direction == 'East':
+            self.canvas.create_rectangle(start_position['x']-(_THICK_*2), start_position['y']-_THICK_-1, start_position['x'], start_position['y']+_THICK_, fill='black')
+        if direction == 'West':
+            self.canvas.create_rectangle(start_position['x'], start_position['y']-_THICK_-1, start_position['x']+(_THICK_*2), start_position['y']+_THICK_, fill='black')
+        if direction == 'South':
+            self.canvas.create_rectangle(start_position['x']-_THICK_-1, start_position['y']-(_THICK_*2), start_position['x']+_THICK_, start_position['y'], fill='black')
+        if direction == 'North':
+            self.canvas.create_rectangle(start_position['x']-_THICK_-1, start_position['y']+(_THICK_*2), start_position['x']+_THICK_, start_position['y'], fill='black')
+        
 
 class TronPlayer(threading.Thread):
     
@@ -259,6 +277,18 @@ class TronPlayer(threading.Thread):
         if self.y_speed != 0:
             self.y_speed /= 2
 
+class Settings:
+        def __init__(self, parent):
+            self.parent = parent
+            
+            self.initUI()
+            self.drawUI()
+            
+        def initUI(self):
+            self.label = Label(text="Setting Game options:")
+            
+        def drawUI(self):
+            self.label.grid(row=0, column=0)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
