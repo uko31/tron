@@ -7,6 +7,10 @@
 #    - permettre des lignes plus grosses
 #
 #    - mettre en place un turbo avec recharge (speedx2 pendant X ticks)
+#    - faire apparaitre les garages de départ
+#    - mettre en place un team play (plusieurs joueurs contre 1)
+#    - mettre en place la notion de longeur de trace (avec fade progressif)
+#    - capture the flag
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
@@ -39,6 +43,7 @@ class TronFrame:
         self.speed = speed
         self.players = list()
         
+        self.InitStartPositions()
         self.InitUI()
         self.DrawUI()
         
@@ -56,36 +61,43 @@ class TronFrame:
         self.canvas.grid(row=0, column=0, sticky=E+S+W+N)
         self.canvas.focus_set()
 
+    def InitStartPositions(self):
+        self.start_positions = dict()
+        self.start_positions['West']  = {'x' : 10,           'y' : _HEIGHT_ / 2  }
+        self.start_positions['East']  = {'x' : _WIDTH_ - 10, 'y' : _HEIGHT_ / 2  }
+        self.start_positions['North'] = {'x' : _WIDTH_ / 2,  'y' : 10            }
+        self.start_positions['South'] = {'x' : _WIDTH_ / 2,  'y' : _HEIGHT_ - 10 }
+
     def Start(self, event=None):
         if self.players.count("Player-%s" % event.char):
             return(False)
         
         if event.char == '1':
             self.players.append("Player-%c" % event.char)
-            self.player1 = TronPlayer(self.canvas, "Player-1", 10, 250, self.speed, 0, '<Right>', '<Left>', 'blue')
+            self.player1 = TronPlayer(self, "Player-1", self.start_positions['West'], self.speed, 0, '<Left>', '<Right>', 'blue')
             self.player1.start()
         if event.char == '2':
             self.players.append("Player-%c" % event.char)
-            self.player2 = TronPlayer(self.canvas, "Player-2", 250, 10, 0, self.speed, 'z', 'a', 'red')
+            self.player2 = TronPlayer(self, "Player-2", self.start_positions['East'], -self.speed, 0, 'a', 'z', 'red')
             self.player2.start()
         if event.char == '3':
             self.players.append("Player-%c" % event.char)
-            self.player2 = TronPlayer(self.canvas, "Player-3", 490, 250, -self.speed, 0, 'u', 'y', 'green')
+            self.player2 = TronPlayer(self, "Player-3", self.start_positions['North'], 0, self.speed, 'y', 'u', 'green')
             self.player2.start()
         if event.char == '4':
             self.players.append("Player-%c" % event.char)
-            self.player2 = TronPlayer(self.canvas, "Player-4", 250, 490, 0, -self.speed, '!', '/', 'cyan')
+            self.player2 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, ':', '!', 'cyan')
             self.player2.start()
 
 class TronPlayer(threading.Thread):
     
-    def __init__(self, canvas, name, x, y, x_speed, y_speed, right_key, left_key, color):
+    def __init__(self, root, name, coord, x_speed, y_speed, left_key, right_key, color):
         threading.Thread.__init__(self)
         
-        self.canvas = canvas
+        self.canvas = root.canvas
         self.name = name
-        self.x = x
-        self.y = y
+        self.x = coord['x']
+        self.y = coord['y']
         self.x_speed = x_speed
         self.y_speed = y_speed
         self.delay = _DELAY_
@@ -100,10 +112,9 @@ class TronPlayer(threading.Thread):
         self.canvas.bind(right_key, self.turnRight)
         
     def run(self):
-        while (self.x < 500 and self.y < 500 and self.x > 0 and self.y > 0) and not self.terminate:
+        while not self.terminate:
             if self.collision():
                 self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
-                print("[%s] overlapped, he is gameover" % self.name)
                 self.terminate = True
                 
             self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
@@ -132,7 +143,11 @@ class TronPlayer(threading.Thread):
                 xoff2 = self.x + self.width/2
                 yoff2 = self.y + self.y_speed
             
-            if self.canvas.find_overlapping(xoff1, yoff1, xoff2, yoff2):
+            if self.x < 0  or self.x > _WIDTH_  or self.y < 0 or self.y > _HEIGHT_:
+                print("[%s] out of field, he is gameover" % self.name)
+                return(True)
+            elif self.canvas.find_overlapping(xoff1, yoff1, xoff2, yoff2):
+                print("[%s] overlapped, he is gameover" % self.name)
                 return(True)
             else:
                 return(False)
