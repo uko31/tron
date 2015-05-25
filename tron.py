@@ -3,14 +3,16 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
 #   Things to do and ideas:
-#    - déterminer le vainqueur!
-#    - permettre des lignes plus grosses (done !)
+#    - déterminer le vainqueur! (done!)
+#    - permettre des lignes plus grosses (done!)
+#    - habiller l'écran (boost indicator, player names, menu ('quit', 'settings', 'start', 'stop'))
 #
-#    - mettre en place un turbo avec recharge (speedx2 pendant X ticks)
+#    - mettre en place la recharge du turbo recharge de 1 tous les X ticks
 #    - faire apparaitre les garages de départ
 #    - mettre en place un team play (plusieurs joueurs contre 1)
 #    - mettre en place la notion de longeur de trace (avec fade progressif)
 #    - capture the flag
+#    - bonus ghost pour disparaitre sans laisser de trace pendant quelques ticks (? interet)
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
@@ -24,11 +26,12 @@ import threading
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
-_SPEED_  = 1
-_HEIGHT_ = 500
-_WIDTH_  = 500
-_THICK_  = 6
-_DELAY_  = 0.02
+_SPEED_       = 1
+_HEIGHT_      = 500
+_WIDTH_       = 500
+_THICK_       = 6
+_DELAY_       = 0.02
+_BOOST_DELAY_ = 25
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
@@ -44,9 +47,25 @@ class TronFrame:
         self.players = list()
         
         self.InitStartPositions()
+        self.InitMenu()
         self.InitUI()
         self.DrawUI()
+    
+    def InitMenu(self):
+        self.menuBar  = Menu(self.root)
+        self.gameMenu = Menu(self.menuBar, tearoff=0)
+        self.gameMenu.add_command(label="New Game", command=self.newGame)
+        self.gameMenu.add_command(label="Settings...", command=self.settings)
+        self.menuBar.add_cascade(label="Game", menu=self.gameMenu)
         
+        self.root.config(menu = self.menuBar)
+        
+    def newGame(self):
+        print("NewGame... to be done.")
+    
+    def settings(self):
+        print("Settings... to be done.")
+
     def InitUI(self):
         self.canvas = Canvas(self.root, bd=2)
         self.canvas.bind('<Key>', self.Start)
@@ -69,24 +88,25 @@ class TronFrame:
         self.start_positions['South'] = {'x' : _WIDTH_ / 2,  'y' : _HEIGHT_ - 10 }
 
     def Start(self, event=None):
+        print(event.keysym)
         if self.players.count("Player-%s" % event.char):
             return(False)
         
-        if event.char == '1':
-            self.players.append("Player-%c" % event.char)
+        if event.keysym == "F1": # press <F1>
+            self.players.append("Player-1")
             self.player1 = TronPlayer(self, "Player-1", self.start_positions['West'], self.speed, 0, '<Left>', '<Right>', '<Up>', 'blue')
             self.player1.start()
-        if event.char == '2':
-            self.players.append("Player-%c" % event.char)
+        if event.keysym == "F2": # press <F2>
+            self.players.append("Player-2")
             self.player2 = TronPlayer(self, "Player-2", self.start_positions['East'], -self.speed, 0, 'q', 'd', 'z', 'red')
             self.player2.start()
-        if event.char == '3':
-            self.players.append("Player-%c" % event.char)
+        if event.keysym == "F3": # press <F3>
+            self.players.append("Player-3")
             self.player3 = TronPlayer(self, "Player-3", self.start_positions['North'], 0, self.speed, 'g', 'j', 'y', 'green')
             self.player3.start()
-        if event.char == '4':
-            self.players.append("Player-%c" % event.char)
-            self.player4 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, 'l', 'ù', 'p', 'orange')
+        if event.keysym == "F4": # press <F4>
+            self.players.append("Player-4")
+            self.player4 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, '<KP_1>', '<KP_3>', '<KP_5>', 'orange')
             self.player4.start()
 
 class TronPlayer(threading.Thread):
@@ -103,6 +123,7 @@ class TronPlayer(threading.Thread):
                   color):
         threading.Thread.__init__(self)
         
+        self.root = root
         self.canvas = root.canvas
         self.name = name
         self.x = coord['x']
@@ -127,6 +148,8 @@ class TronPlayer(threading.Thread):
             if self.tick == 0:
                 self.endBoost()
             if self.tick >= 0:
+                if (self.tick > 0):
+                    print("Player %s end boost in %d ticks." % (self.name, self.tick))
                 self.tick -= 1
             
             if self.collision():
@@ -136,6 +159,10 @@ class TronPlayer(threading.Thread):
             self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
             self.x, self.y = self.x + self.x_speed, self.y + self.y_speed
             time.sleep(self.delay)
+        
+        self.root.players.remove(self.name)
+        if ( len(self.root.players) == 0 ):
+            print("Player %s was the last one standing: He is the winner !!!" % self.name)
     
     def collision(self):
             if   self.x_speed > 0:
@@ -217,7 +244,7 @@ class TronPlayer(threading.Thread):
     def boost(self, event=None):
         if not self.boost_flag:
             print("Boost !!!")
-            self.tick = 25
+            self.tick = _BOOST_DELAY_
             self.boost_flag = True
             if self.x_speed != 0: 
                 self.x_speed *= 2
@@ -232,7 +259,6 @@ class TronPlayer(threading.Thread):
         if self.y_speed != 0:
             self.y_speed /= 2
 
-       
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
