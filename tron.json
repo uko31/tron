@@ -1,5 +1,5 @@
 {
-    "General":
+    "general":
     {
         "boost_delay": "25", 
         "delay": "0.05", 
@@ -8,8 +8,8 @@
         "speed": "2", 
         "thickness": "10", 
         "width": "600"
-    }
-    "Players":
+    },
+    "players":
     [
         { 
             "name": "Player-1", 
