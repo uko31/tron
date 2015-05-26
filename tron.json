@@ -1,0 +1,47 @@
+{
+    "General":
+    {
+        "boost_delay": "25", 
+        "delay": "0.05", 
+        "height": "600", 
+        "resize": "0", 
+        "speed": "2", 
+        "thickness": "10", 
+        "width": "600"
+    }
+    "Players":
+    [
+        { 
+            "name": "Player-1", 
+            "color": "blue",   
+            "position": "west", 
+            "left_key": "<LEFT>",
+            "right_key": "<RIGHT>",
+            "boost_key": "<UP>"
+        },
+        {
+            "name": "Player-2", 
+            "color": "red",
+            "position": "east",
+            "left_key": "q",
+            "right_key": "d",
+            "boost_key": "z"
+        },
+        {
+            "name": "Player-3", 
+            "color": "green",  
+            "position": "north",
+            "left_key": "<KP_1>",
+            "right_key": "<KP-3>",
+            "boost_key": "<KP_5>"
+        },
+        {
+            "name": "Player-4", 
+            "color": "orange", 
+            "position": "south",
+            "left_key": "h",
+            "right_key": "k",
+            "boost_key": "u"            
+        }
+    ]
+}
