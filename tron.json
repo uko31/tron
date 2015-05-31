@@ -1,47 +1,51 @@
 {
     "general":
     {
-        "boost_delay": "25", 
-        "delay": "0.05", 
-        "height": "600", 
+        "boost_delay": "20", 
+        "delay": "0.1", 
+        "height": "800", 
         "resize": "0", 
-        "speed": "2", 
-        "thickness": "10", 
-        "width": "600"
+        "interval": "2", 
+        "thickness": "8", 
+        "width": "800"
     },
-    "players":
+    "pods":
     [
         { 
-            "name": "Player-1", 
-            "color": "blue",   
-            "position": "west", 
+            "name": "Uko", 
+            "color": "#0099CC",
+            "outline" : "#00478F",
+            "position": "West", 
             "left_key": "<LEFT>",
             "right_key": "<RIGHT>",
             "boost_key": "<UP>"
         },
         {
-            "name": "Player-2", 
-            "color": "red",
-            "position": "east",
+            "name": "Marouf",
+            "color": "#FF0000",
+            "outline" : "#990000",
+            "position": "East",
             "left_key": "q",
             "right_key": "d",
             "boost_key": "z"
         },
         {
-            "name": "Player-3", 
-            "color": "green",  
-            "position": "north",
+            "name": "Kaalong", 
+            "color": "#33CC33",  
+            "outline" : "#248F24",
+            "position": "North",
             "left_key": "<KP_1>",
             "right_key": "<KP-3>",
             "boost_key": "<KP_5>"
         },
         {
-            "name": "Player-4", 
-            "color": "orange", 
-            "position": "south",
-            "left_key": "h",
-            "right_key": "k",
-            "boost_key": "u"            
+            "name": "Troffe", 
+            "color": "#FF9933", 
+            "outline" : "#CC7A29",
+            "position": "South",
+            "left_key": "g",
+            "right_key": "j",
+            "boost_key": "y"            
         }
     ]
 }
