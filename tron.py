@@ -7,8 +7,8 @@
 #    - permettre des lignes plus grosses (done!)
 #    - habiller l'écran (boost indicator, player names, menu ('quit', 'settings', 'start', 'stop'))
 #
-#    - mettre en place la recharge du turbo recharge de 1 tous les X ticks
-#    - faire apparaitre les garages de départ
+#    - mettre en place la recharge du turbo recharge de 1 tous les X ticks (Fait!)
+#    - faire apparaitre les garages de départ (Fait!)
 #    - mettre en place un team play (plusieurs joueurs contre 1)
 #    - mettre en place la notion de longeur de trace (avec fade progressif)
 #    - capture the flag
@@ -38,6 +38,55 @@ import threading
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
+class MainWindow:
+    def __init__(self, root):
+        self.root = root
+        
+        #self.settings = Settings(self.root, _Settings_Filename_)                #Settings are loaded from the Settings class
+        
+        self.InitMenu()
+        self.InitUI()
+        self.DrawUI()
+
+    def InitMenu(self):
+        self.menu = Menu(self.root)
+        
+        self.fileMenu = Menu(self.menu, tearoff=0)
+        self.fileMenu.add_command(label="1 Player Game (F1)",  command=lambda nb=1: self.tronFrame.Start(nb), accelerator="<F1>")
+        self.fileMenu.add_command(label="2 Players Game (F2)", command=lambda nb=2: self.tronFrame.Start(nb), accelerator="<F2>")
+        self.fileMenu.add_command(label="3 Players Game (F3)", command=lambda nb=3: self.tronFrame.Start(nb), accelerator="<F3>")
+        self.fileMenu.add_command(label="4 Players Game (F4)", command=lambda nb=4: self.tronFrame.Start(nb), accelerator="<F4>")
+        self.fileMenu.add_command(command=quit, label="**New Game... (CTRL+N)")     #allow to set a game setting and start
+        self.fileMenu.add_command(command=quit, label="**Restart Game (CTRL+R)")    #must be grayed when no game has been set
+        self.fileMenu.add_separator()   
+        self.fileMenu.add_command(command=quit, label="Quit (CTRL+Q)")              #must be grayed when no game has been set
+        
+        self.settingMenu = Menu(self.menu, tearoff=0)
+        self.settingMenu.add_command(command=quit, label="**Settings... (CTRL+S)")  #edit&save new settings
+
+        self.menu.add_cascade(label="File", menu=self.fileMenu)
+        self.menu.add_cascade(label="Settings", menu=self.settingMenu)
+        
+        self.root.config(menu = self.menu)
+        self.root.bind("<F1>", lambda nb=1: self.tronFrame.Start(nb))
+        
+    def InitUI(self):
+        self.topFrame    = Frame(self.root)
+        self.mainFrame   = Frame(self.root)
+        self.bottomFrame = Frame(self.root)
+        
+        self.tronFrame   = TronFrame(self.mainFrame) #, self.settings)
+    
+    def DrawUI(self):
+        Grid.rowconfigure   (self.root, 0, weight=1)                                 # set weight=1 to authorize resizing element
+        Grid.columnconfigure(self.root, 0, weight=1)                                 # set weight=1 to authorize resizing element
+        Grid.rowconfigure   (self.mainFrame, 0, weight=1, minsize=TronFrame.HEIGHT)  # set weight=1 to authorize resizing element
+        Grid.columnconfigure(self.mainFrame, 0, weight=1, minsize=TronFrame.WIDTH)   # set weight=1 to authorize resizing element    
+
+        self.topFrame.grid  (row=0, column=0)
+        self.mainFrame.grid  (row=0, column=0)
+        self.bottomFrame.grid(row=0, column=0)
+
 class TronFrame:
     HEIGHT, WIDTH = 800, 800
     
@@ -48,18 +97,15 @@ class TronFrame:
         
         self.InitStartPositions()
         self.InitUI()
-        self.InitPlayers()
         self.DrawUI()
+        self.InitPlayers()
         self.DrawGarages()
 
     def InitUI(self):
         self.canvas = Canvas(self.root, bd=2)
-        self.canvas.bind('<Key>', self.Start)
+        #self.canvas.bind('<Key>', self.Start)
         
     def DrawUI(self):
-        Grid.rowconfigure   (self.root, 0, weight=1)                 # set weight=1 to authorize resizing element in row[0] main.root
-        Grid.columnconfigure(self.root, 0, weight=1)                 # set weight=1 to authorize resizing element in column[0] main.root
-        
         Grid.rowconfigure   (self.canvas, 0, weight=1, minsize=TronFrame.HEIGHT)  # set weight=1 to authorize resizing element in row[0] main.canvas
         Grid.columnconfigure(self.canvas, 0, weight=1, minsize=TronFrame.WIDTH)  # set weight=1 to authorize resizing element in column[0] main.canvas
 
@@ -114,24 +160,23 @@ class TronFrame:
         self.start_positions[Pod.NORTH] = {'x' : TronFrame.WIDTH / 2,  'y' : 20  }
         self.start_positions[Pod.SOUTH] = {'x' : TronFrame.WIDTH / 2,  'y' : TronFrame.HEIGHT - 20  - Pod.THICKNESS - Pod.INTERVAL }
 
-    def Start(self, event=None):
-        if self.players.count("Player-%s" % event.char):
-            return(False)
-        
-        if event.keysym == "F1": # press <F1>
+    def Start(self, nb, event=None):
+        if nb == 1:
             self.pod1.start()
-        if event.keysym == "F2": # press <F2>
+        elif nb ==  2:
             self.pod1.start()
             self.pod2.start()
-        if event.keysym == "F3": # press <F3>
+        elif nb == 3:
             self.pod1.start()
             self.pod2.start()
             self.pod3.start()
-        if event.keysym == "F4": # press <F4>
+        elif nb == 4:
             self.pod1.start()
             self.pod2.start()
             self.pod3.start()
             self.pod4.start()
+        else:
+            return(False)
             
     def DrawGarages(self):
         directions = (Pod.EAST, Pod.NORTH, Pod.WEST, Pod.SOUTH)
@@ -264,6 +309,6 @@ if __name__ == "__main__":
     TronApp.geometry("%dx%d" % (TronFrame.WIDTH, TronFrame.HEIGHT)) # set window size
     TronApp.resizable(width=False, height=False)                    # unable window resizing
     
-    tron = TronFrame(TronApp)                                       # init main application Frame inside App
+    tron = MainWindow(TronApp)                                       # init main application Frame inside App
 
     TronApp.mainloop()
