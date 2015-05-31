@@ -17,6 +17,8 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 from tkinter import *
+from tkinter import ttk
+import math
 import time
 import threading
 
@@ -26,47 +28,29 @@ import threading
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
-_SPEED_       = 1
-_HEIGHT_      = 500
-_WIDTH_       = 500
-_THICK_       = 6
-_DELAY_       = 0.02
-_BOOST_DELAY_ = 25
+# None: they have been moved into classes static variables.
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
 #   Classes
+#       TronFrame: the frame that hosts the gameove
+#       Pod: each instance is 
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 class TronFrame:
+    HEIGHT, WIDTH = 800, 800
     
-    def __init__(self, root, speed):
+    def __init__(self, root):
         self.root = root
-        self.speed = speed
         self.players = list()
+        self.start_positions = dict()
         
-        self.InitMenu()
-        self.InitUI()
-        self.DrawUI()
         self.InitStartPositions()
-    
-    def InitMenu(self):
-        self.menuBar  = Menu(self.root)
-        self.gameMenu = Menu(self.menuBar, tearoff=0)
-        self.gameMenu.add_command(label="New Game", command=self.newGame)
-        self.gameMenu.add_command(label="Settings...", command=self.settings)
-        self.gameMenu.add_separator()
-        self.gameMenu.add_command(label="Quit", command=quit)
-        self.menuBar.add_cascade(label="Game", menu=self.gameMenu)
-        
-        self.root.config(menu = self.menuBar)
-        
-    def newGame(self):
-        print("NewGame... to be done.")
-    
-    def settings(self):
-        print("Settings... to be done.")
+        self.InitUI()
+        self.InitPlayers()
+        self.DrawUI()
+        self.DrawGarages()
 
     def InitUI(self):
         self.canvas = Canvas(self.root, bd=2)
@@ -76,219 +60,196 @@ class TronFrame:
         Grid.rowconfigure   (self.root, 0, weight=1)                 # set weight=1 to authorize resizing element in row[0] main.root
         Grid.columnconfigure(self.root, 0, weight=1)                 # set weight=1 to authorize resizing element in column[0] main.root
         
-        Grid.rowconfigure   (self.canvas, 0, weight=1, minsize=500)  # set weight=1 to authorize resizing element in row[0] main.canvas
-        Grid.columnconfigure(self.canvas, 0, weight=1, minsize=500)  # set weight=1 to authorize resizing element in column[0] main.canvas
+        Grid.rowconfigure   (self.canvas, 0, weight=1, minsize=TronFrame.HEIGHT)  # set weight=1 to authorize resizing element in row[0] main.canvas
+        Grid.columnconfigure(self.canvas, 0, weight=1, minsize=TronFrame.WIDTH)  # set weight=1 to authorize resizing element in column[0] main.canvas
 
         self.canvas.grid(row=0, column=0, sticky=E+S+W+N)
         self.canvas.focus_set()
+        
+    def InitPlayers(self):
+        self.players.append("Pod1")
+        self.pod1 = Pod( name       = "Joueur Rouge",
+                            field      = self.canvas,
+                            direction  = Pod.EAST, 
+                            coord      = self.start_positions[Pod.WEST],
+                            left       = "<Left>", 
+                            right      = "<Right>",
+                            boost      = "<Up>",
+                            color      = "#FF0000",    #Red
+                            outline    = "#990000" )
+        self.players.append("Pod2")
+        self.pod2 = Pod( name       = "Joueur Vert",
+                            field      = self.canvas,
+                            direction  = Pod.WEST, 
+                            coord      = self.start_positions[Pod.EAST],
+                            left       = "q", 
+                            right      = "d",
+                            boost      = "z",
+                            color      = "#33CC33",    #Green
+                            outline    = "#248F24" )
+        self.players.append("Pod3")
+        self.pod3 = Pod( name       = "Joueur Bleu",
+                            field      = self.canvas,
+                            direction  = Pod.SOUTH, 
+                            coord      = self.start_positions[Pod.NORTH],
+                            left       = "g", 
+                            right      = "j",
+                            boost      = "y",                             
+                            color      = "#0099CC",    #Blue
+                            outline    = "#00478F" )
+        self.players.append("Pod4")
+        self.pod4 = Pod( name       = "Joueur Orange",
+                            field      = self.canvas,
+                            direction  = Pod.NORTH, 
+                            coord      = self.start_positions[Pod.SOUTH],
+                            left       = "<KP_1>", 
+                            right      = "<KP_3>",
+                            boost      = "<KP_5>",                             
+                            color      = "#FF9933",    #Orange
+                            outline    = "#CC7A29" )
 
     def InitStartPositions(self):
-        self.start_positions = dict()
-        self.start_positions['West']  = {'x' : 20,           'y' : _HEIGHT_ / 2  }
-        self.start_positions['East']  = {'x' : _WIDTH_ - 20, 'y' : _HEIGHT_ / 2  }
-        self.start_positions['North'] = {'x' : _WIDTH_ / 2,  'y' : 20            }
-        self.start_positions['South'] = {'x' : _WIDTH_ / 2,  'y' : _HEIGHT_ - 20 }
-
-        self.drawGarage(self.start_positions['West'], 'East')
-        self.drawGarage(self.start_positions['East'], 'West')
-        self.drawGarage(self.start_positions['North'], 'South')
-        self.drawGarage(self.start_positions['South'], 'North')
-
+        self.start_positions[Pod.WEST]  = {'x' : 20, 'y' : TronFrame.HEIGHT / 2  }
+        self.start_positions[Pod.EAST]  = {'x' : TronFrame.WIDTH - 20 - Pod.THICKNESS - Pod.INTERVAL , 'y' : TronFrame.HEIGHT / 2  }
+        self.start_positions[Pod.NORTH] = {'x' : TronFrame.WIDTH / 2,  'y' : 20  }
+        self.start_positions[Pod.SOUTH] = {'x' : TronFrame.WIDTH / 2,  'y' : TronFrame.HEIGHT - 20  - Pod.THICKNESS - Pod.INTERVAL }
 
     def Start(self, event=None):
         if self.players.count("Player-%s" % event.char):
             return(False)
         
         if event.keysym == "F1": # press <F1>
-            self.players.append("Player-1")
-            self.player1 = TronPlayer(self, "Player-1", self.start_positions['West'], self.speed, 0, '<Left>', '<Right>', '<Up>', 'blue')
-            self.player1.start()
+            self.pod1.start()
         if event.keysym == "F2": # press <F2>
-            self.players.append("Player-2")
-            self.player2 = TronPlayer(self, "Player-2", self.start_positions['East'], -self.speed, 0, 'q', 'd', 'z', 'red')
-            self.player2.start()
+            self.pod1.start()
+            self.pod2.start()
         if event.keysym == "F3": # press <F3>
-            self.players.append("Player-3")
-            self.player3 = TronPlayer(self, "Player-3", self.start_positions['North'], 0, self.speed, 'g', 'j', 'y', 'green')
-            self.player3.start()
+            self.pod1.start()
+            self.pod2.start()
+            self.pod3.start()
         if event.keysym == "F4": # press <F4>
-            self.players.append("Player-4")
-            self.player4 = TronPlayer(self, "Player-4", self.start_positions['South'], 0, -self.speed, '<KP_1>', '<KP_3>', '<KP_5>', 'orange')
-            self.player4.start()
-    
-    def drawGarage(self, start_position, direction):
-        if direction == 'East':
-            self.canvas.create_rectangle(start_position['x']-(_THICK_*2), start_position['y']-_THICK_-1, start_position['x'], start_position['y']+_THICK_, fill='black')
-        if direction == 'West':
-            self.canvas.create_rectangle(start_position['x'], start_position['y']-_THICK_-1, start_position['x']+(_THICK_*2), start_position['y']+_THICK_, fill='black')
-        if direction == 'South':
-            self.canvas.create_rectangle(start_position['x']-_THICK_-1, start_position['y']-(_THICK_*2), start_position['x']+_THICK_, start_position['y'], fill='black')
-        if direction == 'North':
-            self.canvas.create_rectangle(start_position['x']-_THICK_-1, start_position['y']+(_THICK_*2), start_position['x']+_THICK_, start_position['y'], fill='black')
-        
+            self.pod1.start()
+            self.pod2.start()
+            self.pod3.start()
+            self.pod4.start()
+            
+    def DrawGarages(self):
+        directions = (Pod.EAST, Pod.NORTH, Pod.WEST, Pod.SOUTH)
+        for d in directions:
+            garage = Pod( "garage",
+                          self.canvas,
+                          direction = (d + 180) % 360,
+                          coord = self.start_positions[d],
+                          left = None,
+                          right = None,
+                          boost = None,
+                          color = "#808080",
+                          outline = "#1A1A1A" )
+            garage.Turn(Pod.LEFT)
+            garage.Move(ghost = True)
+            garage.Turn(Pod.LEFT)
+            garage.Move()
+            garage.Turn(Pod.LEFT)
+            garage.Move()
+            garage.Move()
+            garage.Turn(Pod.LEFT)
+            garage.Move()
+            garage.Turn(Pod.LEFT)
+            garage.Move()
 
-class TronPlayer(threading.Thread):
+class Pod(threading.Thread):
+    # class static attributes
+    EAST, SOUTH, WEST, NORTH = 0, 90, 180, 270
+    ANGLE = 90
+    LEFT, RIGHT = -ANGLE, ANGLE
+    TICKS = 10
+    DELAY = 0.1
+    THICKNESS = 8
+    INTERVAL = 2
     
     def __init__( self, 
-                  root, 
-                  name, 
-                  coord, 
-                  x_speed, 
-                  y_speed, 
-                  left_key, 
-                  right_key, 
-                  boost_key,
-                  color):
+                  name,
+                  field,
+                  direction, 
+                  coord,
+                  left, right, boost,
+                  color, outline):
+        
         threading.Thread.__init__(self)
         
-        self.root = root
-        self.canvas = root.canvas
-        self.name = name
-        self.x = coord['x']
-        self.y = coord['y']
-        self.x_speed = x_speed
-        self.y_speed = y_speed
-        self.delay = _DELAY_
-        self.terminate = False
-        self.color = color
-        self.tick = -1
-        self.width = _THICK_
-        self.boost_flag = False        
+        self.name      = name
+        self.field     = field
+        self.direction = direction
+        self.interval  = Pod.INTERVAL
+        self.thickness = Pod.THICKNESS
+        self.x, self.y = coord['x'], coord['y'],
+        self.left      = left,
+        self.right     = right,
+        self.boost     = boost,
+        self.color     = color,
+        self.outline   = outline,
+        self.go        = True
         
-        self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
-        self.x, self.y = self.x + self.x_speed, self.y + self.y_speed
-        self.canvas.bind(left_key,  self.turnLeft)
-        self.canvas.bind(right_key, self.turnRight)
-        self.canvas.bind(boost_key, self.boost)
+        self.delay = Pod.DELAY
+        self.ticks = 0
         
+        self.field.bind(self.left,  lambda event, angle=Pod.LEFT : self.Turn(angle))
+        self.field.bind(self.right, lambda event, angle=Pod.RIGHT: self.Turn(angle))
+        self.field.bind(self.boost, self.Boost)
+
+    
     def run(self):
-        while not self.terminate:
-            if self.tick == 0:
-                self.endBoost()
-            if self.tick >= 0:
-                if (self.tick > 0):
-                    print("Player %s end boost in %d ticks." % (self.name, self.tick))
-                self.tick -= 1
+        while self.go:
+            if self.ticks > 0:
+                self.ticks -= 1
+                if self.ticks == 0:
+                    self.EndBoost()
             
-            if self.collision():
-                self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
-                self.terminate = True
-                
-            self.canvas.create_line(self.x, self.y, self.x + self.x_speed, self.y + self.y_speed, fill = self.color, width = self.width)
-            self.x, self.y = self.x + self.x_speed, self.y + self.y_speed
+            if self.Collision():
+                self.go = False
+            self.Move()
             time.sleep(self.delay)
+    
+    def Collision(self):
+        xoff = self.x + int((self.interval + self.thickness) * math.cos(math.radians(self.direction)))
+        yoff = self.y + int((self.interval + self.thickness) * math.sin(math.radians(self.direction)))
+
+        # test if Pod is out of Frame:
+        if xoff < 0  or xoff + self.thickness > TronFrame.WIDTH  or yoff < 0 or yoff + self.thickness > TronFrame.HEIGHT:
+            print("[%s] out of field, he is gameover" % self.name)
+            return(True)
         
-        self.root.players.remove(self.name)
-        if ( len(self.root.players) == 0 ):
-            print("Player %s was the last one standing: He is the winner !!!" % self.name)
+        # test if Pod crossed a track:
+        elif self.field.find_overlapping(xoff, yoff, xoff + self.thickness, yoff + self.thickness):
+            print("[%s] overlapped, he is gameover" % self.name)
+            return(True)
+        
+        # else you're good to go:
+        else:
+            return(False)
+
+
+    def Move(self, ghost=False):
+        if ghost == False:
+            self.field.create_rectangle( self.x, 
+                                         self.y, 
+                                         self.x + self.thickness, 
+                                         self.y + self.thickness,
+                                         fill    = self.color,
+                                         outline = self.outline )
+        self.x += int((self.interval + self.thickness) * math.cos(math.radians(self.direction)))
+        self.y += int((self.interval + self.thickness) * math.sin(math.radians(self.direction)))
+        
     
-    def collision(self):
-            if   self.x_speed > 0:
-                xoff1 = self.x + 1 
-                yoff1 = self.y - self.width/2
-                xoff2 = self.x + self.x_speed
-                yoff2 = self.y + self.width/2
-            elif self.x_speed < 0:
-                xoff1 = self.x - 1
-                yoff1 = self.y - self.width/2
-                xoff2 = self.x + self.x_speed
-                yoff2 = self.y + self.width/2
-            elif self.y_speed > 0:
-                xoff1 = self.x - self.width/2
-                yoff1 = self.y + 1
-                xoff2 = self.x + self.width/2
-                yoff2 = self.y + self.y_speed
-            elif self.y_speed < 0:
-                xoff1 = self.x - self.width/2
-                yoff1 = self.y - 1
-                xoff2 = self.x + self.width/2
-                yoff2 = self.y + self.y_speed
-            
-            if self.x < 0  or self.x > _WIDTH_  or self.y < 0 or self.y > _HEIGHT_:
-                print("[%s] out of field, he is gameover" % self.name)
-                return(True)
-            elif self.canvas.find_overlapping(xoff1, yoff1, xoff2, yoff2):
-                print("[%s] overlapped, he is gameover" % self.name)
-                return(True)
-            else:
-                return(False)
-    
-    def turnLeft(self, event=None):
-        if ( self.x_speed != 0 ):
-            if self.x_speed > 0:
-                self.x -= self.width / 2
-                self.y -= self.width / 2
-            else:
-                self.x += self.width / 2
-                self.y += self.width / 2
-                
-            self.y_speed -= self.x_speed
-            self.x_speed = 0
-            
-        elif ( self.y_speed != 0 ):
-            if self.y_speed > 0:
-                self.x += self.width / 2
-                self.y -= self.width / 2
-            else:
-                self.x -= self.width / 2
-                self.y += self.width / 2
-
-            self.x_speed += self.y_speed
-            self.y_speed = 0
-
-    def turnRight(self, event=None):
-        if   ( self.x_speed != 0 ):
-            if self.x_speed > 0:
-                self.x -= self.width / 2
-                self.y += self.width / 2
-            else:
-                self.x += self.width / 2
-                self.y -= self.width / 2
-
-            self.y_speed += self.x_speed
-            self.x_speed = 0
-            
-        elif ( self.y_speed != 0 ):
-            if self.y_speed > 0:
-                self.x -= self.width / 2
-                self.y -= self.width / 2
-            else:
-                self.x += self.width / 2
-                self.y += self.width / 2
-
-            self.x_speed -= self.y_speed
-            self.y_speed = 0
-
-    def boost(self, event=None):
-        if not self.boost_flag:
-            print("Boost !!!")
-            self.tick = _BOOST_DELAY_
-            self.boost_flag = True
-            if self.x_speed != 0: 
-                self.x_speed *= 2
-            if self.y_speed != 0: 
-                self.y_speed *= 2
-
-    def endBoost(self):
-        print("Player: %s end boost :/" % self.name)
-        self.boost_flag = False
-        if self.x_speed != 0:
-            self.x_speed /= 2
-        if self.y_speed != 0:
-            self.y_speed /= 2
-
-class Settings:
-        def __init__(self, parent):
-            self.parent = parent
-            
-            self.initUI()
-            self.drawUI()
-            
-        def initUI(self):
-            self.label = Label(text="Setting Game options:")
-            
-        def drawUI(self):
-            self.label.grid(row=0, column=0)
+    def Turn(self, angle, event=None):
+        self.direction = (self.direction + angle) % 360
+        
+    def Boost(self, event=None):
+        self.delay /= 4
+        self.ticks =  Pod.TICKS
+        
+    def EndBoost(self, event=None):
+        self.delay *= 4
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #
@@ -297,12 +258,12 @@ class Settings:
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 if __name__ == "__main__":
+    
+    TronApp = Tk()
+    TronApp.title("Tron Clone")                                     # application title
+    TronApp.geometry("%dx%d" % (TronFrame.WIDTH, TronFrame.HEIGHT)) # set window size
+    TronApp.resizable(width=False, height=False)                    # unable window resizing
+    
+    tron = TronFrame(TronApp)                                       # init main application Frame inside App
 
-    TronApp = Tk()                                      # init application
-    TronApp.title("Tron Clone")                         # application title
-    TronApp.geometry("%dx%d" % (_WIDTH_, _HEIGHT_))     # set window size
-    TronApp.resizable(width=False, height=False)        # unable window resizing
-    
-    tron = TronFrame(TronApp, _SPEED_)                  # init main application Frame inside App
-    
-    TronApp.mainloop()                                  # main loop
+    TronApp.mainloop()
