@@ -13,6 +13,9 @@
 #    - mettre en place la notion de longeur de trace (avec fade progressif)
 #    - capture the flag
 #    - bonus ghost pour disparaitre sans laisser de trace pendant quelques ticks (? interet)
+#    - Mettre un frein sur la touche <Down> (et assimilées)
+#    - Changer la forme de la "tête" du Pod
+#    - Gérer la gestion des bonus
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
@@ -108,12 +111,9 @@ class MainWindow:
         self.players = list()
         self.start_positions = dict()
         
-        #self.settings = SettingWindow(self.root, Game.Settings)
-        
         self.InitMenu()
         self.InitUI()
         self.DrawUI()
-        #self.InitStartPositions()
         self.InitPlayers()
 
     def InitMenu(self):
@@ -136,10 +136,10 @@ class MainWindow:
         self.menu.add_cascade(label="Settings", menu=self.settingMenu)
         
         self.root.config(menu = self.menu)
-        self.root.bind("<F1>", lambda e, n = 1: self.tronFrame.Start(n, e))
-        self.root.bind("<F2>", lambda e, n = 2: self.tronFrame.Start(n, e))
-        self.root.bind("<F3>", lambda e, n = 3: self.tronFrame.Start(n, e))
-        self.root.bind("<F4>", lambda e, n = 4: self.tronFrame.Start(n, e))
+        self.root.bind("<F1>", lambda e, n = 1: self.tronFrame.NewGame(n, e))
+        self.root.bind("<F2>", lambda e, n = 2: self.tronFrame.NewGame(n, e))
+        self.root.bind("<F3>", lambda e, n = 3: self.tronFrame.NewGame(n, e))
+        self.root.bind("<F4>", lambda e, n = 4: self.tronFrame.NewGame(n, e))
         
     def InitUI(self):
         self.topFrame    = Frame(self.root)
@@ -284,7 +284,7 @@ class TronFrame:
         
         self.InitUI()
         self.DrawUI()
-        self.DrawGarages()
+        # self.NewGame()
 
     def InitUI(self):
         self.canvas = Canvas(self.root)
@@ -298,11 +298,16 @@ class TronFrame:
         self.canvas.grid(row=0, column=0, sticky=E+S+W+N)
         self.canvas.focus_set()
         
-    def Start(self, nb, event=None):
+    def NewGame(self, n, event=None):
+        Game.Field.delete("all")
+        self.DrawGarages()
+        self.Start(n)
+        
+    def Start(self, n):
         i = 1
         for pod in Game.Pod:
             Game.Pod[pod].start()
-            if nb == i:
+            if i == n:
                 break
             else:
                 i += 1
@@ -335,9 +340,6 @@ class Pod(threading.Thread):
     ANGLE = 90
     LEFT, RIGHT = -ANGLE, ANGLE
     TICKS = 10
-    #DELAY = 0.1
-    #THICKNESS = 8
-    #INTERVAL = 2
     
     def __init__( self, 
                   name,
