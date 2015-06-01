@@ -153,8 +153,8 @@ class MainWindow:
     def DrawUI(self):
         Grid.rowconfigure   (self.root, 0, weight=1)                                 # set weight=1 to authorize resizing element
         Grid.columnconfigure(self.root, 0, weight=1)                                 # set weight=1 to authorize resizing element
-        Grid.rowconfigure   (self.mainFrame, 0, weight=1, minsize=TronFrame.HEIGHT)  # set weight=1 to authorize resizing element
-        Grid.columnconfigure(self.mainFrame, 0, weight=1, minsize=TronFrame.WIDTH)   # set weight=1 to authorize resizing element    
+        Grid.rowconfigure   (self.mainFrame, 0, weight=1, minsize=Game.Setting["height"])  # set weight=1 to authorize resizing element
+        Grid.columnconfigure(self.mainFrame, 0, weight=1, minsize=Game.Setting["width"])   # set weight=1 to authorize resizing element    
 
         self.topFrame.grid  (row=0, column=0)
         self.mainFrame.grid  (row=1, column=0)
@@ -275,7 +275,7 @@ class SettingWindow:
             sys.exit("Settings.__init__ CRITICAL Unable to read settings from file: [%s]" % self.filename)
             
 class TronFrame:
-    HEIGHT, WIDTH = 800, 800
+    #HEIGHT, WIDTH = 800, 800
     
     def __init__(self, root, text, players):
         self.root = root
@@ -292,8 +292,8 @@ class TronFrame:
 
         
     def DrawUI(self):
-        Grid.rowconfigure   (self.canvas, 0, weight=1, minsize=TronFrame.HEIGHT)  # set weight=1 to authorize resizing element in row[0] main.canvas
-        Grid.columnconfigure(self.canvas, 0, weight=1, minsize=TronFrame.WIDTH)  # set weight=1 to authorize resizing element in column[0] main.canvas
+        Grid.rowconfigure   (self.canvas, 0, weight=1, minsize=Game.Setting["height"])  # set weight=1 to authorize resizing element in row[0] main.canvas
+        Grid.columnconfigure(self.canvas, 0, weight=1, minsize=Game.Setting["width"])  # set weight=1 to authorize resizing element in column[0] main.canvas
 
         self.canvas.grid(row=0, column=0, sticky=E+S+W+N)
         self.canvas.focus_set()
@@ -384,7 +384,7 @@ class Pod(threading.Thread):
         yoff = self.y + int((self.interval + self.thickness) * math.sin(math.radians(self.direction)))
 
         # test if Pod is out of Frame:
-        if xoff < 0  or xoff + self.thickness > TronFrame.WIDTH  or yoff < 0 or yoff + self.thickness > TronFrame.HEIGHT:
+        if xoff < 0  or xoff + self.thickness > Game.Setting["width"]  or yoff < 0 or yoff + self.thickness > Game.Setting["height"]:
             print("[%s] out of field, he is gameover" % self.name)
             return(True)
         
