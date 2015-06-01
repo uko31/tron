@@ -35,7 +35,7 @@
             "outline" : "#248F24",
             "position": "North",
             "left_key": "<KP_1>",
-            "right_key": "<KP-3>",
+            "right_key": "<KP_3>",
             "boost_key": "<KP_5>"
         },
         {

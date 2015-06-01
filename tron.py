@@ -6,13 +6,19 @@
 #    - déterminer le vainqueur! (done!)
 #    - permettre des lignes plus grosses (done!)
 #    - habiller l'écran (boost indicator, player names, menu ('quit', 'settings', 'start', 'stop'))
-#
+#    - mettre en place un décompte d'avant départ.
 #    - mettre en place la recharge du turbo recharge de 1 tous les X ticks (Fait!)
 #    - faire apparaitre les garages de départ (Fait!)
 #    - mettre en place un team play (plusieurs joueurs contre 1)
 #    - mettre en place la notion de longeur de trace (avec fade progressif)
 #    - capture the flag
 #    - bonus ghost pour disparaitre sans laisser de trace pendant quelques ticks (? interet)
+#
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+#
+#   Libraries
 #
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
@@ -59,8 +65,17 @@ class Setting:
                 setting = dict(json.load(fd))
                 for key, val in setting["general"].items():
                     Game.Setting[key]    = val
+                Game.InitStartPositions()
                 for pod in setting["pods"]:
-                    Game.Pod[pod["name"]] = pod
+                    Game.Pod[pod["name"]] = Pod( name       = pod["name"],
+                                                 field      = Game.Field,
+                                                 direction  = Game.StartPosition[pod["position"]]["direction"],
+                                                 coord      = Game.StartPosition[pod["position"]],
+                                                 left       = pod["left_key"], 
+                                                 right      = pod["right_key"],
+                                                 boost      = pod["boost_key"],
+                                                 color      = pod["color"],
+                                                 outline    = pod["outline"] )
                 fd.close()
                 return(True)
             
@@ -74,6 +89,15 @@ class Game:
     Pod     = dict()
     Setting = dict()
     Field   = None
+    StartPosition = dict()
+    
+    @staticmethod
+    def InitStartPositions():
+        Game.StartPosition["West"]  = {'x': 20, 'y' : int(Game.Setting["height"]) / 2, "direction": 0 }
+        Game.StartPosition["East"]  = {'x': int(Game.Setting["width"]) - 20 - int(Game.Setting["thickness"]) - int(Game.Setting["interval"]), 'y': int(Game.Setting["height"]) / 2, "direction": 180 }
+        Game.StartPosition["North"] = {'x': int(Game.Setting["width"]) / 2, 'y': 20, "direction": 90 }
+        Game.StartPosition["South"] = {'x': int(Game.Setting["width"]) / 2, 'y': int(Game.Setting["height"]) - 20  - int(Game.Setting["thickness"]) - int(Game.Setting["interval"]), "direction": 270 }
+    
     
 class MainWindow:
     def __init__(self, root):
@@ -82,14 +106,13 @@ class MainWindow:
         self.statusBarText.set("Press F1-4 to start a game.")
         self.players = list()
         self.start_positions = dict()
-
         
         #self.settings = SettingWindow(self.root, Game.Settings)
         
         self.InitMenu()
         self.InitUI()
         self.DrawUI()
-        self.InitStartPositions()
+        #self.InitStartPositions()
         self.InitPlayers()
 
     def InitMenu(self):
@@ -134,55 +157,10 @@ class MainWindow:
         self.bottomFrame.grid(row=2, column=0)
         
         self.statusBar.grid(row=0, column=0, sticky=W)
-
-    def InitStartPositions(self):
-        self.start_positions[Pod.WEST]  = {'x' : 20, 'y' : TronFrame.HEIGHT / 2  }
-        self.start_positions[Pod.EAST]  = {'x' : TronFrame.WIDTH - 20 - Pod.THICKNESS - Pod.INTERVAL , 'y' : TronFrame.HEIGHT / 2  }
-        self.start_positions[Pod.NORTH] = {'x' : TronFrame.WIDTH / 2,  'y' : 20  }
-        self.start_positions[Pod.SOUTH] = {'x' : TronFrame.WIDTH / 2,  'y' : TronFrame.HEIGHT - 20  - Pod.THICKNESS - Pod.INTERVAL }
         
     def InitPlayers(self):
-        self.players.append("Pod1")
-        self.pod1 = Pod( name       = "Joueur Rouge",
-                            field      = self.tronFrame.canvas,
-                            direction  = Pod.EAST, 
-                            coord      = self.start_positions[Pod.WEST],
-                            left       = "<Left>", 
-                            right      = "<Right>",
-                            boost      = "<Up>",
-                            color      = "#FF0000",    #Red
-                            outline    = "#990000" )
-        self.players.append("Pod2")
-        self.pod2 = Pod( name       = "Joueur Vert",
-                            field      = self.tronFrame.canvas,
-                            direction  = Pod.WEST, 
-                            coord      = self.start_positions[Pod.EAST],
-                            left       = "q", 
-                            right      = "d",
-                            boost      = "z",
-                            color      = "#33CC33",    #Green
-                            outline    = "#248F24" )
-        self.players.append("Pod3")
-        self.pod3 = Pod( name       = "Joueur Bleu",
-                            field      = self.tronFrame.canvas,
-                            direction  = Pod.SOUTH, 
-                            coord      = self.start_positions[Pod.NORTH],
-                            left       = "g", 
-                            right      = "j",
-                            boost      = "y",                             
-                            color      = "#0099CC",    #Blue
-                            outline    = "#00478F" )
-        self.players.append("Pod4")
-        self.pod4 = Pod( name       = "Joueur Orange",
-                            field      = self.tronFrame.canvas,
-                            direction  = Pod.NORTH, 
-                            coord      = self.start_positions[Pod.SOUTH],
-                            left       = "<KP_1>", 
-                            right      = "<KP_3>",
-                            boost      = "<KP_5>",                             
-                            color      = "#FF9933",    #Orange
-                            outline    = "#CC7A29" )
-
+        for pod in Game.Pod:
+            self.players.append(pod)
 
 class SettingWindow:
     def __init__(self, root, filename):
@@ -292,7 +270,6 @@ class SettingWindow:
         if not self.Read():
             sys.exit("Settings.__init__ CRITICAL Unable to read settings from file: [%s]" % self.filename)
             
-
 class TronFrame:
     HEIGHT, WIDTH = 800, 800
     
@@ -326,22 +303,13 @@ class TronFrame:
         self.start_positions[Pod.SOUTH] = {'x' : TronFrame.WIDTH / 2,  'y' : TronFrame.HEIGHT - 20  - Pod.THICKNESS - Pod.INTERVAL }
 
     def Start(self, nb, event=None):
-        if nb == 1:
-            self.pod1.start()
-        elif nb ==  2:
-            self.pod1.start()
-            self.pod2.start()
-        elif nb == 3:
-            self.pod1.start()
-            self.pod2.start()
-            self.pod3.start()
-        elif nb == 4:
-            self.pod1.start()
-            self.pod2.start()
-            self.pod3.start()
-            self.pod4.start()
-        else:
-            return(False)
+        i = 1
+        for pod in Game.Pod:
+            Game.Pod[pod].start()
+            if nb == i:
+                break
+            else:
+                i += 1
             
     def DrawGarages(self):
         directions = (Pod.EAST, Pod.NORTH, Pod.WEST, Pod.SOUTH)
@@ -402,13 +370,12 @@ class Pod(threading.Thread):
         
         self.delay = Pod.DELAY
         self.ticks = 0
-        
-        self.field.bind(self.left,  lambda event, angle=Pod.LEFT : self.Turn(angle))
-        self.field.bind(self.right, lambda event, angle=Pod.RIGHT: self.Turn(angle))
-        self.field.bind(self.boost, self.Boost)
-
     
     def run(self):
+        Game.Field.bind(self.left,  lambda event, angle=Pod.LEFT : self.Turn(angle))
+        Game.Field.bind(self.right, lambda event, angle=Pod.RIGHT: self.Turn(angle))
+        Game.Field.bind(self.boost, self.Boost)
+        
         while self.go:
             if self.ticks > 0:
                 self.ticks -= 1
@@ -430,7 +397,7 @@ class Pod(threading.Thread):
             return(True)
         
         # test if Pod crossed a track:
-        elif self.field.find_overlapping(xoff, yoff, xoff + self.thickness, yoff + self.thickness):
+        elif Game.Field.find_overlapping(xoff, yoff, xoff + self.thickness, yoff + self.thickness):
             print("[%s] overlapped, he is gameover" % self.name)
             return(True)
         
@@ -441,7 +408,7 @@ class Pod(threading.Thread):
 
     def Move(self, ghost=False):
         if ghost == False:
-            self.field.create_rectangle( self.x, 
+            Game.Field.create_rectangle( self.x, 
                                          self.y, 
                                          self.x + self.thickness, 
                                          self.y + self.thickness,
