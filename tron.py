@@ -64,18 +64,20 @@ class Setting:
                 fd = open(self.filename, "r")
                 setting = dict(json.load(fd))
                 for key, val in setting["general"].items():
-                    Game.Setting[key]    = val
+                    Game.Setting[key] = val
+                    
                 Game.InitStartPositions()
+                
                 for pod in setting["pods"]:
-                    Game.Pod[pod["name"]] = Pod( name       = pod["name"],
-                                                 field      = Game.Field,
-                                                 direction  = Game.StartPosition[pod["position"]]["direction"],
-                                                 coord      = Game.StartPosition[pod["position"]],
-                                                 left       = pod["left_key"], 
-                                                 right      = pod["right_key"],
-                                                 boost      = pod["boost_key"],
-                                                 color      = pod["color"],
-                                                 outline    = pod["outline"] )
+                    Game.Pod[pod["id"]] = Pod( name       = pod["name"],
+                                               direction  = Game.StartPosition[pod["position"]]["direction"],
+                                               coord      = Game.StartPosition[pod["position"]],
+                                               left       = pod["left_key"], 
+                                               right      = pod["right_key"],
+                                               boost      = pod["boost_key"],
+                                               color      = pod["color"],
+                                               outline    = pod["outline"] )
+                    
                 fd.close()
                 return(True)
             
@@ -83,7 +85,7 @@ class Setting:
                 print("Settings.Read ERROR tryin to open [%s]" % (e.info, self.filename))
                 return(False)
         else:
-            return(False)        
+            return(False)
 
 class Game:
     Pod     = dict()
@@ -93,11 +95,10 @@ class Game:
     
     @staticmethod
     def InitStartPositions():
-        Game.StartPosition["West"]  = {'x': 20, 'y' : int(Game.Setting["height"]) / 2, "direction": 0 }
-        Game.StartPosition["East"]  = {'x': int(Game.Setting["width"]) - 20 - int(Game.Setting["thickness"]) - int(Game.Setting["interval"]), 'y': int(Game.Setting["height"]) / 2, "direction": 180 }
-        Game.StartPosition["North"] = {'x': int(Game.Setting["width"]) / 2, 'y': 20, "direction": 90 }
-        Game.StartPosition["South"] = {'x': int(Game.Setting["width"]) / 2, 'y': int(Game.Setting["height"]) - 20  - int(Game.Setting["thickness"]) - int(Game.Setting["interval"]), "direction": 270 }
-    
+        Game.StartPosition["West"]  = {'x': 20, 'y' : Game.Setting["height"] / 2, "direction": 0 }
+        Game.StartPosition["East"]  = {'x': Game.Setting["width"] - 20 - Game.Setting["thickness"] - Game.Setting["interval"], 'y': Game.Setting["height"] / 2, "direction": 180 }
+        Game.StartPosition["North"] = {'x': Game.Setting["width"] / 2, 'y': 20, "direction": 90 }
+        Game.StartPosition["South"] = {'x': Game.Setting["width"] / 2, 'y': Game.Setting["height"] - 20  - Game.Setting["thickness"] - Game.Setting["interval"], "direction": 270 }
     
 class MainWindow:
     def __init__(self, root):
@@ -135,7 +136,10 @@ class MainWindow:
         self.menu.add_cascade(label="Settings", menu=self.settingMenu)
         
         self.root.config(menu = self.menu)
-        self.root.bind("<F1>", lambda nb=1: self.tronFrame.Start(nb))
+        self.root.bind("<F1>", lambda e, n = 1: self.tronFrame.Start(n, e))
+        self.root.bind("<F2>", lambda e, n = 2: self.tronFrame.Start(n, e))
+        self.root.bind("<F3>", lambda e, n = 3: self.tronFrame.Start(n, e))
+        self.root.bind("<F4>", lambda e, n = 4: self.tronFrame.Start(n, e))
         
     def InitUI(self):
         self.topFrame    = Frame(self.root)
@@ -277,9 +281,7 @@ class TronFrame:
         self.root = root
         self.text = text
         self.players = players
-        self.start_positions = dict()
         
-        self.InitStartPositions()
         self.InitUI()
         self.DrawUI()
         self.DrawGarages()
@@ -296,12 +298,6 @@ class TronFrame:
         self.canvas.grid(row=0, column=0, sticky=E+S+W+N)
         self.canvas.focus_set()
         
-    def InitStartPositions(self):
-        self.start_positions[Pod.WEST]  = {'x' : 20, 'y' : TronFrame.HEIGHT / 2  }
-        self.start_positions[Pod.EAST]  = {'x' : TronFrame.WIDTH - 20 - Pod.THICKNESS - Pod.INTERVAL , 'y' : TronFrame.HEIGHT / 2  }
-        self.start_positions[Pod.NORTH] = {'x' : TronFrame.WIDTH / 2,  'y' : 20  }
-        self.start_positions[Pod.SOUTH] = {'x' : TronFrame.WIDTH / 2,  'y' : TronFrame.HEIGHT - 20  - Pod.THICKNESS - Pod.INTERVAL }
-
     def Start(self, nb, event=None):
         i = 1
         for pod in Game.Pod:
@@ -312,12 +308,10 @@ class TronFrame:
                 i += 1
             
     def DrawGarages(self):
-        directions = (Pod.EAST, Pod.NORTH, Pod.WEST, Pod.SOUTH)
-        for d in directions:
+        for position in Game.StartPosition:
             garage = Pod( "garage",
-                          self.canvas,
-                          direction = (d + 180) % 360,
-                          coord     = self.start_positions[d],
+                          direction = Game.StartPosition[position]["direction"],
+                          coord     = Game.StartPosition[position],
                           left      = None,
                           right     = None,
                           boost     = None,
@@ -341,13 +335,12 @@ class Pod(threading.Thread):
     ANGLE = 90
     LEFT, RIGHT = -ANGLE, ANGLE
     TICKS = 10
-    DELAY = 0.1
-    THICKNESS = 8
-    INTERVAL = 2
+    #DELAY = 0.1
+    #THICKNESS = 8
+    #INTERVAL = 2
     
     def __init__( self, 
                   name,
-                  field,
                   direction, 
                   coord,
                   left, right, boost,
@@ -356,10 +349,9 @@ class Pod(threading.Thread):
         threading.Thread.__init__(self)
         
         self.name      = name
-        self.field     = field
         self.direction = direction
-        self.interval  = Pod.INTERVAL
-        self.thickness = Pod.THICKNESS
+        self.interval  = int(Game.Setting["interval"])
+        self.thickness = int(Game.Setting["thickness"])
         self.x, self.y = coord['x'], coord['y'],
         self.left      = left,
         self.right     = right,
@@ -368,7 +360,7 @@ class Pod(threading.Thread):
         self.outline   = outline,
         self.go        = True
         
-        self.delay = Pod.DELAY
+        self.delay = Game.Setting["delay"]
         self.ticks = 0
     
     def run(self):

@@ -1,26 +1,28 @@
 {
     "general":
     {
-        "boost_delay": "20", 
-        "delay": "0.1", 
-        "height": "800", 
-        "resize": "0", 
-        "interval": "2", 
-        "thickness": "8", 
-        "width": "800"
+        "boost_delay": 20, 
+        "delay": 0.1,
+        "height": 800, 
+        "resize": 0, 
+        "interval": 2, 
+        "thickness": 8, 
+        "width": 800
     },
     "pods":
     [
         { 
+            "id": 1,
             "name": "Uko", 
             "color": "#0099CC",
             "outline" : "#00478F",
             "position": "West", 
-            "left_key": "<LEFT>",
-            "right_key": "<RIGHT>",
-            "boost_key": "<UP>"
+            "left_key": "<Left>",
+            "right_key": "<Right>",
+            "boost_key": "<Up>"
         },
         {
+            "id": 2,
             "name": "Marouf",
             "color": "#FF0000",
             "outline" : "#990000",
@@ -30,6 +32,7 @@
             "boost_key": "z"
         },
         {
+            "id": 3,
             "name": "Kaalong", 
             "color": "#33CC33",  
             "outline" : "#248F24",
@@ -39,6 +42,7 @@
             "boost_key": "<KP_5>"
         },
         {
+            "id": 4,
             "name": "Troffe", 
             "color": "#FF9933", 
             "outline" : "#CC7A29",
