@@ -72,14 +72,15 @@ class Setting:
                 Game.InitStartPositions()
                 
                 for pod in setting["pods"]:
-                    Game.Pod[pod["id"]] = Pod( name       = pod["name"],
-                                               direction  = Game.StartPosition[pod["position"]]["direction"],
-                                               coord      = Game.StartPosition[pod["position"]],
-                                               left       = pod["left_key"], 
-                                               right      = pod["right_key"],
-                                               boost      = pod["boost_key"],
-                                               color      = pod["color"],
-                                               outline    = pod["outline"] )
+                    Game.Podlist.append(pod),
+                    # Game.Pod[pod["id"]] = Pod( name       = pod["name"],
+                                               # direction  = Game.StartPosition[pod["position"]]["direction"],
+                                               # coord      = Game.StartPosition[pod["position"]],
+                                               # left       = pod["left_key"], 
+                                               # right      = pod["right_key"],
+                                               # boost      = pod["boost_key"],
+                                               # color      = pod["color"],
+                                               # outline    = pod["outline"] )
                     
                 fd.close()
                 return(True)
@@ -92,6 +93,7 @@ class Setting:
 
 class Game:
     Pod     = dict()
+    Podlist = list()
     Setting = dict()
     Field   = None
     StartPosition = dict()
@@ -284,6 +286,7 @@ class TronFrame:
         
         self.InitUI()
         self.DrawUI()
+        self.DrawGarages()
         # self.NewGame()
 
     def InitUI(self):
@@ -299,18 +302,34 @@ class TronFrame:
         self.canvas.focus_set()
         
     def NewGame(self, n, event=None):
-        Game.Field.delete("all")
-        self.DrawGarages()
-        self.Start(n)
-        
-    def Start(self, n):
-        i = 1
-        for pod in Game.Pod:
-            Game.Pod[pod].start()
-            if i == n:
-                break
-            else:
-                i += 1
+        for pod in Game.Podlist:
+            if pod["id"] in Game.Pod:
+                print("il existe encore au moins un Pod")
+                return(False)
+    
+        for pod in Game.Podlist:
+            Game.Field.delete(pod["name"])
+            
+        for pod in Game.Podlist:
+            if pod["id"] <= n:
+                Game.Pod[pod["id"]] = Pod( name       = pod["name"],
+                                           direction  = Game.StartPosition[pod["position"]]["direction"],
+                                           coord      = Game.StartPosition[pod["position"]],
+                                           left       = pod["left_key"], 
+                                           right      = pod["right_key"],
+                                           boost      = pod["boost_key"],
+                                           color      = pod["color"],
+                                           outline    = pod["outline"] )
+                Game.Pod[pod["id"]].start()
+    
+    # def Start(self, n):
+        # i = 1
+        # for pod in Game.Pod:
+            # Game.Pod[pod].start()
+            # if i == n:
+                # break
+            # else:
+                # i += 1
             
     def DrawGarages(self):
         for position in Game.StartPosition:
@@ -380,6 +399,10 @@ class Pod(threading.Thread):
                 self.go = False
             self.Move()
             time.sleep(self.delay)
+        
+        for pod in Game.Podlist:
+            if pod["name"] == self.name:
+                del(Game.Pod[pod["id"]])
     
     def Collision(self):
         xoff = self.x + int((self.interval + self.thickness) * math.cos(math.radians(self.direction)))
@@ -406,6 +429,7 @@ class Pod(threading.Thread):
                                          self.y, 
                                          self.x + self.thickness, 
                                          self.y + self.thickness,
+                                         tag = self.name,
                                          fill    = self.color,
                                          outline = self.outline )
         self.x += int((self.interval + self.thickness) * math.cos(math.radians(self.direction)))
